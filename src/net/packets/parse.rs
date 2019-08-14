@@ -14,7 +14,7 @@ impl Coder {
         Coder { state }
     }
 
-    pub fn state(&self) -> ConnectionState {
+    pub fn state(self) -> ConnectionState {
         self.state
     }
 

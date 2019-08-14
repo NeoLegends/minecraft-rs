@@ -56,9 +56,9 @@ impl Outgoing for EncryptionRequest {
         let token_len = self.verify_token.len() as i32;
 
         dst.write_str(&self.server_id)?;
-        dst.write_var_i32(pkey_len.into())?;
+        dst.write_var_i32(pkey_len)?;
         dst.put(&self.public_key);
-        dst.write_var_i32(token_len.into())?;
+        dst.write_var_i32(token_len)?;
         dst.put(&self.verify_token);
 
         Ok(())

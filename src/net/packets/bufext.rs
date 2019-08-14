@@ -94,7 +94,7 @@ impl<B: BufMut> VarWriteExt for B {
 
 pub fn var_i32_length(val: i32) -> usize {
     // Prevent sign-extension during shift
-    var_u64_length(val as u32 as u64)
+    var_u64_length(u64::from(val as u32))
 }
 
 pub fn var_i64_length(val: i64) -> usize {
@@ -110,7 +110,7 @@ pub fn var_u64_length(mut val: u64) -> usize {
     let mut count = 0;
     while val != 0 {
         count += 1;
-        val = val >> 7;
+        val >>= 7;
     }
     count
 }
