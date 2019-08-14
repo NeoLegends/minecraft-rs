@@ -6,6 +6,9 @@ use futures::{
 use std::{io, net::SocketAddr};
 use tokio::net::{TcpListener, TcpStream};
 
+#[macro_use]
+mod macros;
+
 pub mod crypto;
 pub mod packets;
 
