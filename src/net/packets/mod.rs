@@ -30,6 +30,13 @@ pub trait Incoming: TryFrom<Bytes, Error = io::Error> {
     fn validate(&self) -> Result<(), String> {
         Ok(())
     }
+
+    fn validate_self(self) -> Result<Self, String> {
+        match self.validate() {
+            Ok(_) => Ok(self),
+            Err(e) => Err(e),
+        }
+    }
 }
 
 pub trait Outgoing {
