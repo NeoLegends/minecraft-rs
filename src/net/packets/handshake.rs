@@ -1,4 +1,4 @@
-use super::bufext::VarReadExt;
+use super::{bufext::VarReadExt, Incoming};
 use bytes::{Buf, Bytes};
 use std::{
     convert::TryFrom,
@@ -43,8 +43,8 @@ impl TryFrom<Bytes> for Handshake {
     }
 }
 
-impl Handshake {
-    pub fn validate(&self) -> Result<(), String> {
+impl Incoming for Handshake {
+    fn validate(&self) -> Result<(), String> {
         match self.protocol_version {
             404 => Ok(()),
             _ => Err("Unknown protocol version".to_owned()),
