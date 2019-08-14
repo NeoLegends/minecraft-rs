@@ -11,6 +11,7 @@ mod macros;
 
 pub mod crypto;
 pub mod packets;
+pub mod util;
 
 #[derive(Debug)]
 pub struct Client {}
@@ -58,22 +59,24 @@ impl ServerBuilder {
         let bind_addr = self.bind_addr.expect("missing bind_addr");
         let new_player = self.new_player.expect("missing channel for new players");
 
-        let handler_fut = TcpListener::bind(&bind_addr)?
-            .incoming()
-            .for_each(|maybe_conn| {
-                match maybe_conn {
-                    Ok(conn) => {
-                        let accept_future =
-                            accept_connection(conn, new_player.clone());
-                        tokio::spawn(accept_future);
+        let handler_fut =
+            TcpListener::bind(&bind_addr)?
+                .incoming()
+                .for_each(|maybe_conn| {
+                    match maybe_conn {
+                        Ok(conn) => {
+                            let accept_future =
+                                accept_connection(conn, new_player.clone());
+                            tokio::spawn(accept_future);
+                        }
+                        Err(e) => eprintln!(
+                            "error while accepting TCP connection: {:?}",
+                            e
+                        ),
                     }
-                    Err(e) => {
-                        eprintln!("error while accepting TCP connection: {:?}", e)
-                    }
-                }
 
-                future::ready(())
-            });
+                    future::ready(())
+                });
 
         if let Some(shutdown) = self.shutdown {
             let _ = Abortable::new(handler_fut, shutdown).await;
