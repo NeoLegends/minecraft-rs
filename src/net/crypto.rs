@@ -64,6 +64,18 @@ impl<S> CryptStream<S> {
 
         CryptStream { stream: encrypt }
     }
+
+    pub fn get_ref(&self) -> &S {
+        self.stream.get_ref().get_ref()
+    }
+
+    pub fn get_mut(&mut self) -> &mut S {
+        self.stream.get_mut().get_mut()
+    }
+
+    pub fn into_inner(self) -> S {
+        self.stream.into_inner().into_inner()
+    }
 }
 
 impl<S: AsyncRead + Unpin> AsyncRead for CryptStream<S> {
@@ -98,6 +110,18 @@ impl<S> Decrypt<S> {
             r_buf: vec![0; cap].into_boxed_slice(),
             r_buf_len: 0,
         }
+    }
+
+    pub fn get_ref(&self) -> &S {
+        &self.stream
+    }
+
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.stream
+    }
+
+    pub fn into_inner(self) -> S {
+        self.stream
     }
 }
 
@@ -219,6 +243,18 @@ impl<S> Encrypt<S> {
             buf_pos: 0,
             buf_len: 0,
         }
+    }
+
+    pub fn get_ref(&self) -> &S {
+        &self.stream
+    }
+
+    pub fn get_mut(&mut self) -> &mut S {
+        &mut self.stream
+    }
+
+    pub fn into_inner(self) -> S {
+        self.stream
     }
 }
 
