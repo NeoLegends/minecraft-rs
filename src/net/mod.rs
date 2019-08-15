@@ -114,8 +114,10 @@ impl ServerBuilder {
 }
 
 impl StatsRequest {
-    pub fn new(send_stats: oneshot::Sender<Stats>) -> Self {
-        StatsRequest { send_stats }
+    pub fn new() -> (Self, impl Future<Output = Option<Stats>>) {
+        let (tx, rx) = oneshot::channel();
+
+        (StatsRequest { send_stats: tx }, rx.map(|res| res.ok()))
     }
 
     pub fn respond(self, stats: Stats) {

@@ -1,8 +1,5 @@
 use super::{packets::*, Client, ConnectionState, StatsRequest};
-use futures::{
-    channel::{mpsc::Sender, oneshot},
-    prelude::*,
-};
+use futures::{channel::mpsc::Sender, prelude::*};
 use log::{error, info};
 use std::io::{self, Error, ErrorKind};
 use tokio::{codec::Framed, io::AsyncWriteExt, net::TcpStream};
@@ -69,16 +66,14 @@ async fn handle_status(
         }
     }
 
-    let (tx, rx) = oneshot::channel();
-    let stats_req = StatsRequest::new(tx);
-
+    let (stats_req, stats_resp) = StatsRequest::new();
     stats_request
         .send(stats_req)
         .await
         .map_err(|_| Error::new(ErrorKind::Other, "game disconnected"))?;
-    let stats = rx
+    let stats = stats_resp
         .await
-        .map_err(|_| Error::new(ErrorKind::Other, "game disconnected"))?
+        .ok_or_else(|| Error::new(ErrorKind::Other, "game disconnected"))?
         .into();
 
     conn.send(OutgoingPackets::StatusResponse(stats)).await?;
