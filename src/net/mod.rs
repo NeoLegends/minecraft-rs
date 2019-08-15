@@ -3,6 +3,7 @@ use futures::{
     future::{self, AbortRegistration, Abortable},
     prelude::*,
 };
+use log::error;
 use std::{io, net::SocketAddr};
 use tokio::net::TcpListener;
 
@@ -94,10 +95,9 @@ impl ServerBuilder {
                             new_player.clone(),
                             stats_req.clone(),
                         ),
-                        Err(e) => eprintln!(
-                            "error while accepting TCP connection: {:?}",
-                            e
-                        ),
+                        Err(e) => {
+                            error!("error while accepting TCP connection: {:?}", e)
+                        }
                     }
 
                     future::ready(())

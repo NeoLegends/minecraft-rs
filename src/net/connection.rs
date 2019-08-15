@@ -3,6 +3,7 @@ use futures::{
     channel::{mpsc::Sender, oneshot},
     prelude::*,
 };
+use log::{error, info};
 use std::io::{self, Error, ErrorKind};
 use tokio::{codec::Framed, io::AsyncWriteExt, net::TcpStream};
 
@@ -15,7 +16,7 @@ pub fn accept(
         let res = handle_connection(conn, new_player, stats_request).await;
 
         if let Err(e) = res {
-            eprintln!("{:?}", e);
+            error!("{:?}", e);
         }
     });
 }
@@ -63,7 +64,7 @@ async fn handle_status(
         Some(Ok(IncomingPackets::StatusHandshake(pkg)))
             if pkg.validate().is_ok() => {}
         _ => {
-            println!("connection lost before status response sent.");
+            info!("connection lost before status response sent.");
             return Ok(());
         }
     }
