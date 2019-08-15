@@ -118,7 +118,7 @@ impl StatsRequest {
         StatsRequest { send_stats }
     }
 
-    pub fn respond_to(self) -> oneshot::Sender<Stats> {
-        self.send_stats
+    pub fn respond(self, stats: Stats) {
+        let _ = self.send_stats.send(stats);
     }
 }
