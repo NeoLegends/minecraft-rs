@@ -21,7 +21,7 @@ pub struct StatusResponse {
     pub players_max: usize,
     pub players_online: usize,
     pub description: String,
-    pub favicon: String,
+    pub favicon: Option<String>,
 }
 
 impl TryFrom<Bytes> for Ping {
@@ -57,6 +57,10 @@ impl Incoming for StatusHandshake {}
 
 impl StatusResponse {
     fn build_json(&self) -> String {
+        let favicon = self
+            .favicon
+            .as_ref()
+            .map(|i| format!("data:image/png;base64,{}", i));
         let json = json!({
             "version": {
                 "name": self.version,
@@ -70,10 +74,23 @@ impl StatusResponse {
             "description": {
                 "text": self.description
             },
-            "favicon": format!("data:image/png;base64,{}", self.favicon)
+            "favicon": favicon,
         });
 
         json.to_string()
+    }
+}
+
+impl From<crate::net::Stats> for StatusResponse {
+    fn from(stats: crate::net::Stats) -> Self {
+        StatusResponse {
+            version: "1.13.2".to_owned(),
+            protocol_version: 404,
+            players_max: stats.players_max,
+            players_online: stats.players_online,
+            description: stats.description,
+            favicon: stats.favicon,
+        }
     }
 }
 
