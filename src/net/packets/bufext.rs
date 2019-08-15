@@ -91,16 +91,19 @@ impl<B: BufMut> VarWriteExt for B {
     }
 }
 
+#[inline]
 pub fn var_i32_length(val: i32) -> usize {
     // Prevent sign-extension during shift
     var_u64_length(u64::from(val as u32))
 }
 
+#[inline]
 pub fn var_i64_length(val: i64) -> usize {
     // Prevent sign-extension during shift
     var_u64_length(val as u64)
 }
 
+#[inline]
 pub fn var_usize_length(val: usize) -> usize {
     var_u64_length(val as u64)
 }
