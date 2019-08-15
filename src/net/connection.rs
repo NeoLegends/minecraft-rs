@@ -25,9 +25,9 @@ async fn handle_connection(
     new_player: Sender<Client>,
     stats_request: Sender<StatsRequest>,
 ) -> io::Result<()> {
-    let mut frame = Framed::new(conn, Coder::new(ConnectionState::Start));
+    let mut framed = Framed::new(conn, Coder::new(ConnectionState::Start));
 
-    let handshake = frame
+    let handshake = framed
         .next()
         .await
         .ok_or_else(|| {
@@ -41,8 +41,8 @@ async fn handle_connection(
         .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
 
     match handshake.next_state {
-        NextState::Login => handle_login(frame, new_player).await?,
-        NextState::Status => handle_status(frame, stats_request).await?,
+        NextState::Login => handle_login(framed, new_player).await?,
+        NextState::Status => handle_status(framed, stats_request).await?,
     }
 
     Ok(())
