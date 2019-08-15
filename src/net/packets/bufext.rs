@@ -65,7 +65,6 @@ impl<B: Buf> VarReadExt for B {
 
 impl<B: BufMut> VarWriteExt for B {
     fn write_var_i32(&mut self, val: i32) -> Result<()> {
-        // Double cast to prevent sign-extension
         if self.remaining_mut() < var_i32_length(val) {
             return Err(ErrorKind::UnexpectedEof.into());
         }
