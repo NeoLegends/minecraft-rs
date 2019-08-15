@@ -7,7 +7,7 @@ mod login;
 mod parse;
 mod status;
 
-pub use self::{bufext::*, handshake::*, login::*, status::*};
+pub use self::{bufext::*, handshake::*, login::*, parse::Coder, status::*};
 
 #[derive(Clone, Debug)]
 pub enum IncomingPackets {
