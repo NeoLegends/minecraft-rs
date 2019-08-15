@@ -1,11 +1,11 @@
 macro_rules! derive_async_read {
     ($stream:ident) => {
-        #[inline(always)]
+        #[inline]
         unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [u8]) -> bool {
             self.$stream.prepare_uninitialized_buffer(buf)
         }
 
-        #[inline(always)]
+        #[inline]
         fn poll_read(
             self: ::std::pin::Pin<&mut Self>,
             cx: &mut ::std::task::Context<'_>,
@@ -18,7 +18,7 @@ macro_rules! derive_async_read {
 
 macro_rules! derive_async_write {
     ($stream:ident) => {
-        #[inline(always)]
+        #[inline]
         fn poll_write(
             self: ::std::pin::Pin<&mut Self>,
             cx: &mut ::std::task::Context<'_>,
@@ -27,7 +27,7 @@ macro_rules! derive_async_write {
             ::std::pin::Pin::new(&mut self.get_mut().$stream).poll_write(cx, buf)
         }
 
-        #[inline(always)]
+        #[inline]
         fn poll_flush(
             self: ::std::pin::Pin<&mut Self>,
             cx: &mut ::std::task::Context<'_>,
@@ -35,7 +35,7 @@ macro_rules! derive_async_write {
             ::std::pin::Pin::new(&mut self.get_mut().$stream).poll_flush(cx)
         }
 
-        #[inline(always)]
+        #[inline]
         fn poll_shutdown(
             self: ::std::pin::Pin<&mut Self>,
             cx: &mut ::std::task::Context<'_>,
