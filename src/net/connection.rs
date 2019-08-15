@@ -4,7 +4,7 @@ use futures::{
     prelude::*,
 };
 use std::io::{self, Error, ErrorKind};
-use tokio::{codec::Framed, net::TcpStream};
+use tokio::{codec::Framed, io::AsyncWriteExt, net::TcpStream};
 
 pub fn accept(
     conn: TcpStream,
@@ -55,15 +55,10 @@ async fn handle_login(
     unimplemented!()
 }
 
-async fn handle_status<C>(
-    mut conn: C,
+async fn handle_status(
+    mut conn: Framed<TcpStream, Coder>,
     mut stats_request: Sender<StatsRequest>,
-) -> io::Result<()>
-where
-    C: Stream<Item = Result<IncomingPackets, Error>>
-        + Sink<OutgoingPackets, Error = Error>
-        + Unpin,
-{
+) -> io::Result<()> {
     match conn.next().await {
         Some(Ok(IncomingPackets::StatusHandshake(pkg)))
             if pkg.validate().is_ok() => {}
@@ -87,15 +82,16 @@ where
 
     conn.send(OutgoingPackets::StatusResponse(stats)).await?;
 
-    loop {
-        let ping = match conn.next().await {
-            Some(Ok(IncomingPackets::Ping(ping))) => ping,
-            _ => break,
-        };
+    match conn.next().await {
+        Some(Ok(IncomingPackets::Ping(ping))) => {
+            conn.send(OutgoingPackets::Ping(Ping { value: ping.value }))
+                .await?;
+        }
+        _ => {}
+    };
 
-        conn.send(OutgoingPackets::Ping(Ping { value: ping.value }))
-            .await?;
-    }
+    let mut transport = conn.into_inner();
+    let _ = AsyncWriteExt::shutdown(&mut transport).await;
 
     Ok(())
 }
