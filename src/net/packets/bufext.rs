@@ -133,6 +133,19 @@ mod tests {
     }
 
     #[test]
+    fn var_length_matches_serialized() {
+        let mut data = Vec::new();
+
+        data.write_var_i32(127).unwrap();
+        assert_eq!(data.len(), var_i32_length(127));
+        data.clear();
+
+        data.write_var_i32(-1).unwrap();
+        assert_eq!(data.len(), var_i32_length(-1));
+        data.clear();
+    }
+
+    #[test]
     fn var_read() {
         let data = [
             0x7fu8, 0x80, 0x01, 0xff, 0xff, 0xff, 0xff, 0x07, 0xff, 0xff, 0xff,
