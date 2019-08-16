@@ -45,16 +45,20 @@ async fn handle_connection(
 }
 
 async fn handle_login(
-    _conn: Framed<TcpStream, Coder>,
+    mut conn: Framed<TcpStream, Coder>,
     _new_player: Sender<Client>,
-) -> io::Result<()> {
+) -> io::Result<TcpStream> {
+    conn.codec_mut().set_state(ConnectionState::Login);
+
     unimplemented!()
 }
 
 async fn handle_status(
     mut conn: Framed<TcpStream, Coder>,
     mut stats_request: Sender<StatsRequest>,
-) -> io::Result<()> {
+) -> io::Result<TcpStream> {
+    conn.codec_mut().set_state(ConnectionState::Status);
+
     match conn.next().await {
         Some(Ok(IncomingPackets::StatusHandshake(pkg)))
             if pkg.validate().is_ok() => {}
