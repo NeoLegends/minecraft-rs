@@ -1,5 +1,6 @@
 [package]
 name = "minecraft-rs"
+description = "A server for Minecraft"
 version = "0.1.0"
 authors = ["Moritz Gunz <moritz.gunz@gmail.com>"]
 edition = "2018"
@@ -9,14 +10,15 @@ name = "minecraft"
 path = "src/lib.rs"
 
 [[bin]]
-name = "minecraft-server"
+name = "minecraft"
 path = "src/main.rs"
 
 [dependencies]
 bytes = "0.4.12"
 clap = "2.33.0"
 enum_dispatch = "0.1.3"
-futures-preview = { version = "0.3.0-alpha.17", features = ["compat", "io-compat"] }
+env_logger = "0.6.2"
+futures-preview = { version = "0.3.0-alpha.17", features = ["async-await", "compat", "io-compat", "nightly"] }
 hematite-nbt = "0.4.0"
 log = "0.4.8"
 mc-varint = "0.1.1"
