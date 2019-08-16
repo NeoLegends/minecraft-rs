@@ -127,7 +127,7 @@ macro_rules! serialize_table {
 
                 $dst.reserve(total_len);
 
-                $dst.write_var_i32(total_len as i32)?;
+                $dst.write_var_len(total_len)?;
                 $dst.write_var_i32($packet_id)?;
                 p.write_to($dst)?;
             })*,
