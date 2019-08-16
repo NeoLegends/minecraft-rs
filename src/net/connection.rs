@@ -25,16 +25,28 @@ async fn handle_connection(
 ) -> io::Result<()> {
     let mut framed = Framed::new(conn, Coder::new(ConnectionState::Start));
 
-    let handshake = framed
+    let maybe_handshake = framed
         .next()
         .await
-        .ok_or_else(|| Error::new(ErrorKind::ConnectionAborted, "connection lost"))??
-        .into_handshake()
-        .map_err(|_| {
-            Error::new(ErrorKind::InvalidData, "expected handshake packet")
-        })?
-        .validate_self()
-        .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
+        .ok_or_else(|| Error::new(ErrorKind::ConnectionAborted, "connection lost"))
+        .and_then(|inner| inner)
+        .and_then(|packet| {
+            packet.into_handshake().map_err(|_| {
+                Error::new(ErrorKind::InvalidData, "expected handshake packet")
+            })
+        })
+        .and_then(|hs| {
+            hs.validate_self()
+                .map_err(|e| Error::new(ErrorKind::InvalidData, e))
+        });
+    let handshake = match maybe_handshake {
+        Ok(hs) => hs,
+        Err(e) => {
+            let mut transport = framed.into_inner();
+            let _ = AsyncWriteExt::shutdown(&mut transport).await;
+            return Err(e);
+        }
+    };
 
     match handshake.next_state {
         NextState::Login => handle_login(framed, new_player).await?,
