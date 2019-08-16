@@ -3,7 +3,7 @@ use futures::{
     future::{self, AbortRegistration, Abortable},
     prelude::*,
 };
-use log::error;
+use log::{error, info};
 use std::{io, net::SocketAddr};
 use tokio::net::TcpListener;
 
@@ -90,11 +90,19 @@ impl ServerBuilder {
                 .incoming()
                 .for_each(|maybe_conn| {
                     match maybe_conn {
-                        Ok(conn) => connection::accept(
-                            conn,
-                            new_player.clone(),
-                            stats_req.clone(),
-                        ),
+                        Ok(conn) => {
+                            if let Ok(addr) = conn.peer_addr() {
+                                info!("accepting connection from {}", addr);
+                            } else {
+                                info!("acceping connection from unknown origin");
+                            }
+
+                            connection::accept(
+                                conn,
+                                new_player.clone(),
+                                stats_req.clone(),
+                            );
+                        }
                         Err(e) => {
                             error!("error while accepting TCP connection: {:?}", e)
                         }
