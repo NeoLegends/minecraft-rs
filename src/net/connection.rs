@@ -28,9 +28,7 @@ async fn handle_connection(
     let handshake = framed
         .next()
         .await
-        .ok_or_else(|| {
-            Error::new(ErrorKind::ConnectionAborted.into(), "connection lost")
-        })??
+        .ok_or_else(|| Error::new(ErrorKind::ConnectionAborted, "connection lost"))??
         .into_handshake()
         .map_err(|_| {
             Error::new(ErrorKind::InvalidData, "expected handshake packet")
@@ -78,13 +76,10 @@ async fn handle_status(
 
     conn.send(OutgoingPackets::StatusResponse(stats)).await?;
 
-    match conn.next().await {
-        Some(Ok(IncomingPackets::Ping(ping))) => {
-            conn.send(OutgoingPackets::Ping(Ping { value: ping.value }))
-                .await?;
-        }
-        _ => {}
-    };
+    if let Some(Ok(IncomingPackets::Ping(ping))) = conn.next().await {
+        conn.send(OutgoingPackets::Ping(Ping { value: ping.value }))
+            .await?;
+    }
 
     let mut transport = conn.into_inner();
     let _ = AsyncWriteExt::shutdown(&mut transport).await;
