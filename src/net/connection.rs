@@ -48,10 +48,11 @@ async fn handle_connection(
         }
     };
 
-    match handshake.next_state {
+    let mut transport = match handshake.next_state {
         NextState::Login => handle_login(framed, new_player).await?,
         NextState::Status => handle_status(framed, stats_request).await?,
-    }
+    };
+    let _ = AsyncWriteExt::shutdown(&mut transport).await;
 
     Ok(())
 }
@@ -76,7 +77,7 @@ async fn handle_status(
             if pkg.validate().is_ok() => {}
         _ => {
             info!("connection lost before status response sent.");
-            return Ok(());
+            return Ok(conn.into_inner());
         }
     }
 
@@ -97,8 +98,5 @@ async fn handle_status(
             .await?;
     }
 
-    let mut transport = conn.into_inner();
-    let _ = AsyncWriteExt::shutdown(&mut transport).await;
-
-    Ok(())
+    Ok(conn.into_inner())
 }
