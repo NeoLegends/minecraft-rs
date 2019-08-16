@@ -25,7 +25,7 @@ async fn main() {
                 .long("port")
                 .short("p")
                 .help("The port to start the server on.")
-                .default_value("25655")
+                .default_value("25565")
                 .required(true)
                 .validator(|v| {
                     v.parse::<u16>().map(|_| ()).map_err(|_| {
