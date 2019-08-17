@@ -23,6 +23,9 @@ async fn handle_connection(
     new_player: Sender<Client>,
     stats_request: Sender<StatsRequest>,
 ) -> io::Result<()> {
+    let remote_addr = conn.peer_addr()?;
+    info!("accepting connection from {}", remote_addr);
+
     let mut framed = Framed::new(conn, Coder::new(ConnectionState::Start));
 
     let maybe_handshake = framed
@@ -52,7 +55,9 @@ async fn handle_connection(
         NextState::Login => handle_login(framed, new_player).await?,
         NextState::Status => handle_status(framed, stats_request).await?,
     };
+
     let _ = AsyncWriteExt::shutdown(&mut transport).await;
+    info!("connection to {} shut down", remote_addr);
 
     Ok(())
 }
