@@ -10,13 +10,12 @@ pub async fn handle(
 ) -> io::Result<TcpStream> {
     conn.codec_mut().set_state(ConnectionState::Status);
 
-    match conn.next().await {
-        Some(Ok(IncomingPackets::StatusHandshake(pkg)))
-            if pkg.validate().is_ok() => {}
-        _ => {
-            info!("connection lost before status response sent.");
-            return Ok(conn.into_inner());
-        }
+    if let Some(Ok(IncomingPackets::StatusHandshake(hs))) = conn.next().await {
+        hs.validate()
+            .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
+    } else {
+        info!("connection lost before status response sent.");
+        return Ok(conn.into_inner());
     }
 
     let (stats_req, stats_resp) = StatsRequest::new();
