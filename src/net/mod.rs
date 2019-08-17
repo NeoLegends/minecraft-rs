@@ -114,10 +114,14 @@ impl ServerBuilder {
 }
 
 impl StatsRequest {
-    pub fn new() -> (Self, impl Future<Output = Option<Stats>>) {
+    pub async fn send_via(mut chan: Sender<StatsRequest>) -> Option<Stats> {
         let (tx, rx) = oneshot::channel();
+        let request = StatsRequest { send_stats: tx };
 
-        (StatsRequest { send_stats: tx }, rx.map(|res| res.ok()))
+        match chan.send(request).await.ok() {
+            Some(_) => rx.map(|res| res.ok()).await,
+            None => None,
+        }
     }
 
     pub fn respond(self, stats: Stats) {

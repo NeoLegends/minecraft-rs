@@ -6,7 +6,7 @@ use tokio::{codec::Framed, net::TcpStream};
 
 pub async fn handle(
     mut conn: Framed<TcpStream, Coder>,
-    mut stats_request: Sender<StatsRequest>,
+    stats_request: Sender<StatsRequest>,
 ) -> io::Result<TcpStream> {
     conn.codec_mut().set_state(ConnectionState::Status);
 
@@ -18,17 +18,11 @@ pub async fn handle(
         return Ok(conn.into_inner());
     }
 
-    let (stats_req, stats_resp) = StatsRequest::new();
-    stats_request
-        .send(stats_req)
+    let stats = StatsRequest::send_via(stats_request)
         .await
-        .map_err(|_| Error::new(ErrorKind::Other, "game disconnected"))?;
-    let stats = stats_resp
-        .await
-        .ok_or_else(|| Error::new(ErrorKind::Other, "game disconnected"))?
-        .into();
-
-    conn.send(OutgoingPackets::StatusResponse(stats)).await?;
+        .ok_or_else(|| Error::new(ErrorKind::Other, "game disconnected"))?;
+    conn.send(OutgoingPackets::StatusResponse(stats.into()))
+        .await?;
 
     while let Some(Ok(IncomingPackets::Ping(ping))) = conn.next().await {
         conn.send(OutgoingPackets::Ping(Ping { value: ping.value }))
