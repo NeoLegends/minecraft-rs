@@ -98,7 +98,7 @@ async fn handle_status(
 
     conn.send(OutgoingPackets::StatusResponse(stats)).await?;
 
-    if let Some(Ok(IncomingPackets::Ping(ping))) = conn.next().await {
+    while let Some(Ok(IncomingPackets::Ping(ping))) = conn.next().await {
         conn.send(OutgoingPackets::Ping(Ping { value: ping.value }))
             .await?;
     }
