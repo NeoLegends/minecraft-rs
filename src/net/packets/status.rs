@@ -3,7 +3,7 @@ use super::{
     Incoming, Outgoing,
 };
 use bytes::{Bytes, BytesMut, IntoBuf};
-use serde_json::json;
+use serde_json::{json, Value};
 use std::{convert::TryFrom, io};
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
@@ -57,11 +57,7 @@ impl Incoming for StatusHandshake {}
 
 impl StatusResponse {
     fn build_json(&self) -> String {
-        let favicon = self
-            .favicon
-            .as_ref()
-            .map(|i| format!("data:image/png;base64,{}", i));
-        let json = json!({
+        let mut json = json!({
             "version": {
                 "name": self.version,
                 "protocol": self.protocol_version
@@ -74,8 +70,20 @@ impl StatusResponse {
             "description": {
                 "text": self.description
             },
-            "favicon": favicon,
         });
+
+        // Minecraft wants the favicon key to be omitted instead of `null`.
+        // Serde serializes `Option::None` to `null` instead of omitting the key,
+        // so we need to resort to mutation here.
+        let favicon = self
+            .favicon
+            .as_ref()
+            .map(|i| format!("data:image/png;base64,{}", i));
+        if let Some(icon) = favicon {
+            json.as_object_mut()
+                .expect("wanted object")
+                .insert("favicon".to_owned(), Value::String(icon));
+        }
 
         json.to_string()
     }
