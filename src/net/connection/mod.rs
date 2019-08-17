@@ -4,6 +4,9 @@ use log::{error, info};
 use std::io::{self, Error, ErrorKind};
 use tokio::{codec::Framed, io::AsyncWriteExt, net::TcpStream};
 
+mod login;
+mod status;
+
 pub fn accept(
     conn: TcpStream,
     new_player: Sender<Client>,
@@ -28,82 +31,24 @@ async fn handle_connection(
 
     let mut framed = Framed::new(conn, Coder::new(ConnectionState::Start));
 
-    let maybe_handshake = framed
-        .next()
-        .await
-        .ok_or_else(|| Error::new(ErrorKind::ConnectionAborted, "connection lost"))
-        .and_then(|inner| inner)
-        .and_then(|packet| {
-            packet.into_handshake().map_err(|_| {
-                Error::new(ErrorKind::InvalidData, "expected handshake packet")
-            })
-        })
-        .and_then(|hs| {
+    let handshake =
+        if let Some(Ok(IncomingPackets::Handshake(hs))) = framed.next().await {
             hs.validate_self()
-                .map_err(|e| Error::new(ErrorKind::InvalidData, e))
-        });
-    let handshake = match maybe_handshake {
-        Ok(hs) => hs,
-        Err(e) => {
+                .map_err(|e| Error::new(ErrorKind::InvalidData, e))?
+        } else {
             error!("invalid handshake from {}", remote_addr);
 
             let mut transport = framed.into_inner();
             let _ = AsyncWriteExt::shutdown(&mut transport).await;
-            return Err(e);
-        }
-    };
-
+            return Err(Error::new(ErrorKind::InvalidData, "invalid handshake"));
+        };
     let mut transport = match handshake.next_state {
-        NextState::Login => handle_login(framed, new_player).await?,
-        NextState::Status => handle_status(framed, stats_request).await?,
+        NextState::Login => login::handle(framed, new_player).await?,
+        NextState::Status => status::handle(framed, stats_request).await?,
     };
 
     let _ = AsyncWriteExt::shutdown(&mut transport).await;
     info!("connection to {} shut down", remote_addr);
 
     Ok(())
-}
-
-async fn handle_login(
-    mut conn: Framed<TcpStream, Coder>,
-    _new_player: Sender<Client>,
-) -> io::Result<TcpStream> {
-    conn.codec_mut().set_state(ConnectionState::Login);
-
-    unimplemented!()
-}
-
-async fn handle_status(
-    mut conn: Framed<TcpStream, Coder>,
-    mut stats_request: Sender<StatsRequest>,
-) -> io::Result<TcpStream> {
-    conn.codec_mut().set_state(ConnectionState::Status);
-
-    match conn.next().await {
-        Some(Ok(IncomingPackets::StatusHandshake(pkg)))
-            if pkg.validate().is_ok() => {}
-        _ => {
-            info!("connection lost before status response sent.");
-            return Ok(conn.into_inner());
-        }
-    }
-
-    let (stats_req, stats_resp) = StatsRequest::new();
-    stats_request
-        .send(stats_req)
-        .await
-        .map_err(|_| Error::new(ErrorKind::Other, "game disconnected"))?;
-    let stats = stats_resp
-        .await
-        .ok_or_else(|| Error::new(ErrorKind::Other, "game disconnected"))?
-        .into();
-
-    conn.send(OutgoingPackets::StatusResponse(stats)).await?;
-
-    while let Some(Ok(IncomingPackets::Ping(ping))) = conn.next().await {
-        conn.send(OutgoingPackets::Ping(Ping { value: ping.value }))
-            .await?;
-    }
-
-    Ok(conn.into_inner())
 }
