@@ -45,6 +45,8 @@ async fn handle_connection(
     let handshake = match maybe_handshake {
         Ok(hs) => hs,
         Err(e) => {
+            error!("invalid handshake from {}", remote_addr);
+
             let mut transport = framed.into_inner();
             let _ = AsyncWriteExt::shutdown(&mut transport).await;
             return Err(e);
