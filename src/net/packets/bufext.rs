@@ -109,6 +109,10 @@ pub fn var_usize_length(val: usize) -> usize {
 }
 
 pub fn var_u64_length(mut val: u64) -> usize {
+    if val == 0 {
+        return 1;
+    }
+
     let mut count = 0;
     while val != 0 {
         count += 1;
@@ -131,7 +135,9 @@ mod tests {
         assert_eq!(var_i64_length(1), 1);
         assert_eq!(var_i64_length(2147483647), 5);
         assert_eq!(var_i64_length(-1), 10);
-        assert_eq!(var_i64_length(9223372036854775807), 9)
+        assert_eq!(var_i64_length(9223372036854775807), 9);
+
+        assert_eq!(var_i32_length(0), 1);
     }
 
     #[test]
