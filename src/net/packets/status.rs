@@ -103,8 +103,6 @@ impl Outgoing for StatusResponse {
 
     fn write_to(&self, dst: &mut BytesMut) -> io::Result<()> {
         let stringified = self.build_json();
-
-        dst.reserve(5 + stringified.len());
         dst.write_str(&stringified)
     }
 }
