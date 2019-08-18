@@ -2,12 +2,12 @@ use bytes::{Bytes, BytesMut};
 use std::{convert::TryFrom, io};
 
 mod bufext;
+mod codec;
 mod handshake;
 mod login;
-mod parse;
 mod status;
 
-pub use self::{bufext::*, handshake::*, login::*, parse::Coder, status::*};
+pub use self::{bufext::*, codec::Coder, handshake::*, login::*, status::*};
 
 #[derive(Clone, Debug)]
 pub enum IncomingPackets {
