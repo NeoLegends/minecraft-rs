@@ -84,6 +84,7 @@ impl ServerBuilder {
         let stats_req = self
             .stats_request
             .expect("missing channel for status requests");
+        let kp = crypto::Keypair::generate();
 
         let handler_fut =
             TcpListener::bind(&bind_addr)?
@@ -94,6 +95,7 @@ impl ServerBuilder {
                             conn,
                             new_player.clone(),
                             stats_req.clone(),
+                            kp.clone(),
                         ),
                         Err(e) => {
                             error!("error while accepting TCP connection: {:?}", e)

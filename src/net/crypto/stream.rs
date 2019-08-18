@@ -1,8 +1,5 @@
 use futures::ready;
-use openssl::{
-    rsa::Rsa,
-    symm::{Cipher, Crypter, Mode},
-};
+use openssl::symm::{Cipher, Crypter, Mode};
 use std::{
     fmt::{Debug, Formatter, Result as FmtResult},
     io::{Error, ErrorKind, Read, Result},
@@ -13,18 +10,6 @@ use std::{
 use tokio::io::{AsyncRead, AsyncWrite};
 
 const BUF_SIZE: usize = 1024 * 8;
-
-pub fn generate_keypair() -> (Vec<u8>, Vec<u8>) {
-    let key = Rsa::generate(1024).expect("failed to generate RSA keypair");
-    let public = key
-        .public_key_to_der()
-        .expect("failed to convert public key to DER");
-    let private = key
-        .private_key_to_der()
-        .expect("failed to convert public key to DER");
-
-    (public, private)
-}
 
 #[derive(Debug)]
 pub struct CryptStream<S> {
