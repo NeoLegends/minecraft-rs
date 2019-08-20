@@ -29,7 +29,7 @@ pub struct ServerBuilder {
     bind_addr: Option<SocketAddr>,
     new_player: Option<Sender<Client>>,
     shutdown: Option<AbortRegistration>,
-    stats_request: Option<Sender<StatusRequest>>,
+    status_request: Option<Sender<StatusRequest>>,
 }
 
 #[derive(Clone)]
@@ -37,7 +37,7 @@ pub struct ServerState {
     pub http_client: HttpClient,
     pub keypair: crypto::Keypair,
     pub new_client: Sender<Client>,
-    pub stats_request: Sender<StatusRequest>,
+    pub status_request: Sender<StatusRequest>,
 }
 
 impl Client {
@@ -56,7 +56,7 @@ impl ServerBuilder {
             bind_addr: None,
             new_player: None,
             shutdown: None,
-            stats_request: None,
+            status_request: None,
         }
     }
 
@@ -75,16 +75,16 @@ impl ServerBuilder {
         self
     }
 
-    pub fn stats_request(mut self, on_request: Sender<StatusRequest>) -> Self {
-        self.stats_request = Some(on_request);
+    pub fn status_request(mut self, on_request: Sender<StatusRequest>) -> Self {
+        self.status_request = Some(on_request);
         self
     }
 
     pub async fn run(self) -> io::Result<()> {
         let bind_addr = self.bind_addr.expect("missing bind_addr");
         let new_client = self.new_player.expect("missing channel for new players");
-        let stats_request = self
-            .stats_request
+        let status_request = self
+            .status_request
             .expect("missing channel for status requests");
         let keypair = crypto::Keypair::generate();
 
@@ -92,7 +92,7 @@ impl ServerBuilder {
             http_client: HttpClient::new(),
             keypair,
             new_client,
-            stats_request,
+            status_request,
         };
 
         let handler_fut =

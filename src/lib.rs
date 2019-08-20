@@ -21,7 +21,7 @@ pub async fn run(world: &Path, port: u16) -> io::Result<()> {
     let network = ServerBuilder::new()
         .bind_addr(bind_addr)
         .new_player(new_player_tx)
-        .stats_request(status_request_tx)
+        .status_request(status_request_tx)
         .run();
 
     try_join!(game, network).map(|_| ())
@@ -34,7 +34,7 @@ pub async fn run_test() {
     let network = ServerBuilder::new()
         .bind_addr(([127, 0, 0, 1], 25565).into())
         .new_player(new_player_tx)
-        .stats_request(status_request_tx)
+        .status_request(status_request_tx)
         .run();
 
     tokio::spawn(async move {

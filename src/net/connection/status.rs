@@ -19,7 +19,7 @@ pub async fn handle(
         return Ok(conn.into_inner());
     }
 
-    let stats = StatusRequest::send_via(state.stats_request)
+    let stats = StatusRequest::send_via(state.status_request)
         .await
         .ok_or_else(|| Error::new(ErrorKind::Other, "game disconnected"))?;
     conn.send(OutgoingPackets::StatusResponse(stats.into()))
