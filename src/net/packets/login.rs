@@ -17,7 +17,7 @@ pub struct Disconnect {
 pub struct EncryptionRequest {
     pub server_id: String,
     pub public_key: Bytes,
-    pub verify_token: Bytes,
+    pub verify_token: [u8; 16],
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -59,7 +59,7 @@ impl Outgoing for EncryptionRequest {
         dst.write_var_i32(pkey_len)?;
         dst.put(&self.public_key);
         dst.write_var_i32(token_len)?;
-        dst.put(&self.verify_token);
+        dst.put(self.verify_token.as_ref());
 
         Ok(())
     }
