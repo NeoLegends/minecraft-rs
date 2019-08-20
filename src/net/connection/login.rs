@@ -1,9 +1,8 @@
 use super::ConnectionState;
-use crate::net::{packets::*, ServerState};
+use crate::net::{crypto, packets::*, ServerState};
 use futures::prelude::*;
-use log::error;
 use rand;
-use std::io::{self, Error, ErrorKind};
+use std::io;
 use tokio::{codec::Framed, net::TcpStream};
 
 pub async fn handle(
@@ -12,18 +11,7 @@ pub async fn handle(
 ) -> io::Result<TcpStream> {
     conn.codec_mut().set_state(ConnectionState::Login);
 
-    let username = match conn.next().await {
-        Some(Ok(IncomingPackets::LoginStart(packet))) => {
-            packet
-                .validate_self()
-                .map_err(|e| Error::new(ErrorKind::InvalidData, e))?
-                .username
-        }
-        _ => {
-            error!("invalid login handshake");
-            return Ok(conn.into_inner());
-        }
-    };
+    let username = expect_packet!(conn, LoginStart).username;
 
     let verify_token = rand::random();
     let enc_request = EncryptionRequest {
@@ -33,6 +21,8 @@ pub async fn handle(
     };
     conn.send(OutgoingPackets::EncryptionRequest(enc_request))
         .await?;
+
+    let encryption_response = expect_packet!(conn, EncryptionResponse);
 
     unimplemented!()
 }

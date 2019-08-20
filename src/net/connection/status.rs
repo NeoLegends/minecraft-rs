@@ -1,7 +1,6 @@
 use super::ConnectionState;
 use crate::net::{packets::*, ServerState, StatusRequest};
 use futures::prelude::*;
-use log::info;
 use std::io::{self, Error, ErrorKind};
 use tokio::{codec::Framed, net::TcpStream};
 
@@ -11,13 +10,7 @@ pub async fn handle(
 ) -> io::Result<TcpStream> {
     conn.codec_mut().set_state(ConnectionState::Status);
 
-    if let Some(Ok(IncomingPackets::StatusHandshake(hs))) = conn.next().await {
-        hs.validate()
-            .map_err(|e| Error::new(ErrorKind::InvalidData, e))?;
-    } else {
-        info!("connection lost before status response sent.");
-        return Ok(conn.into_inner());
-    }
+    expect_packet!(conn, StatusHandshake);
 
     let stats = StatusRequest::send_via(state.status_request)
         .await
