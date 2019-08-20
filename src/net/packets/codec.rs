@@ -1,5 +1,5 @@
 use super::{bufext::VarReadExt, IncomingPackets, OutgoingPackets};
-use crate::net::ConnectionState;
+use crate::net::connection::ConnectionState;
 use bytes::{BufMut, Bytes, BytesMut};
 use std::io::{Cursor, Error, ErrorKind};
 use tokio::codec::{Decoder, Encoder};

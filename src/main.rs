@@ -6,7 +6,7 @@ use clap::{
     AppSettings, Arg,
 };
 use env_logger;
-use log::error;
+use log::{error, LevelFilter};
 use std::path::Path;
 use tokio;
 
@@ -15,7 +15,11 @@ const WORLD_ARG: &str = "WORLD";
 
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    env_logger::Builder::new()
+        .filter_level(LevelFilter::Info)
+        .init();
+
+    minecraft::run_test().await;
 
     let matches = app_from_crate!()
         .setting(AppSettings::GlobalVersion)

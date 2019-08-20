@@ -1,5 +1,5 @@
-use super::{crypto::Keypair, packets::*, Client, ConnectionState, StatsRequest};
-use futures::{channel::mpsc::Sender, prelude::*};
+use super::{packets::*, ServerState};
+use futures::prelude::*;
 use log::{error, info};
 use std::io::{self, Error, ErrorKind};
 use tokio::{codec::Framed, io::AsyncWriteExt, net::TcpStream};
@@ -7,14 +7,17 @@ use tokio::{codec::Framed, io::AsyncWriteExt, net::TcpStream};
 mod login;
 mod status;
 
-pub fn accept(
-    conn: TcpStream,
-    new_player: Sender<Client>,
-    stats_request: Sender<StatsRequest>,
-    keypair: Keypair,
-) {
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ConnectionState {
+    Start,
+    Status,
+    Play,
+    Login,
+}
+
+pub fn accept(conn: TcpStream, state: ServerState) {
     tokio::spawn(async {
-        let res = handle_connection(conn, new_player, stats_request, keypair).await;
+        let res = handle_connection(conn, state).await;
 
         if let Err(e) = res {
             error!("{:?}", e);
@@ -22,12 +25,7 @@ pub fn accept(
     });
 }
 
-async fn handle_connection(
-    conn: TcpStream,
-    new_player: Sender<Client>,
-    stats_request: Sender<StatsRequest>,
-    keypair: Keypair,
-) -> io::Result<()> {
+async fn handle_connection(conn: TcpStream, state: ServerState) -> io::Result<()> {
     let remote_addr = conn.peer_addr()?;
     info!("accepting connection from {}", remote_addr);
 
@@ -45,8 +43,8 @@ async fn handle_connection(
             return Err(Error::new(ErrorKind::InvalidData, "invalid handshake"));
         };
     let mut transport = match handshake.next_state {
-        NextState::Login => login::handle(framed, new_player, keypair).await?,
-        NextState::Status => status::handle(framed, stats_request).await?,
+        NextState::Login => login::handle(framed, state).await?,
+        NextState::Status => status::handle(framed, state).await?,
     };
 
     let _ = AsyncWriteExt::shutdown(&mut transport).await;

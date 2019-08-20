@@ -1,4 +1,4 @@
-use crate::net::{Client, StatsRequest};
+use crate::net::{Client, StatusRequest};
 use futures::channel::mpsc::Receiver;
 use std::{io, path::Path};
 
@@ -7,7 +7,7 @@ mod world;
 #[derive(Debug)]
 pub struct GameBuilder<'a> {
     new_players: Option<Receiver<Client>>,
-    status_requests: Option<Receiver<StatsRequest>>,
+    status_requests: Option<Receiver<StatusRequest>>,
     world: Option<&'a Path>,
 }
 
@@ -25,7 +25,7 @@ impl<'a> GameBuilder<'a> {
         self
     }
 
-    pub fn status_requests(mut self, recv: Receiver<StatsRequest>) -> Self {
+    pub fn status_requests(mut self, recv: Receiver<StatusRequest>) -> Self {
         self.status_requests = Some(recv);
         self
     }

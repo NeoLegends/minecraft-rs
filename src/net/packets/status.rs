@@ -89,8 +89,8 @@ impl StatusResponse {
     }
 }
 
-impl From<crate::net::Stats> for StatusResponse {
-    fn from(stats: crate::net::Stats) -> Self {
+impl From<crate::net::Status> for StatusResponse {
+    fn from(stats: crate::net::Status) -> Self {
         StatusResponse {
             version: "1.13.2".to_owned(),
             protocol_version: 404,

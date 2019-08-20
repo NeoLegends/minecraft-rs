@@ -1,12 +1,13 @@
-use crate::net::{packets::*, ConnectionState, StatsRequest};
-use futures::{channel::mpsc::Sender, prelude::*};
+use super::ConnectionState;
+use crate::net::{packets::*, ServerState, StatusRequest};
+use futures::prelude::*;
 use log::info;
 use std::io::{self, Error, ErrorKind};
 use tokio::{codec::Framed, net::TcpStream};
 
 pub async fn handle(
     mut conn: Framed<TcpStream, Coder>,
-    stats_request: Sender<StatsRequest>,
+    state: ServerState,
 ) -> io::Result<TcpStream> {
     conn.codec_mut().set_state(ConnectionState::Status);
 
@@ -18,7 +19,7 @@ pub async fn handle(
         return Ok(conn.into_inner());
     }
 
-    let stats = StatsRequest::send_via(stats_request)
+    let stats = StatusRequest::send_via(state.stats_request)
         .await
         .ok_or_else(|| Error::new(ErrorKind::Other, "game disconnected"))?;
     conn.send(OutgoingPackets::StatusResponse(stats.into()))

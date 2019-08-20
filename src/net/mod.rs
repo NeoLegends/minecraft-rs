@@ -1,9 +1,10 @@
 use futures::{
-    channel::{mpsc::Sender, oneshot},
+    channel::mpsc::Sender,
     future::{self, AbortRegistration, Abortable},
     prelude::*,
 };
 use log::error;
+use reqwest::r#async::Client as HttpClient;
 use std::{io, net::SocketAddr};
 use tokio::net::TcpListener;
 
@@ -12,40 +13,41 @@ mod macros;
 
 mod connection;
 mod crypto;
+mod status_request;
 mod util;
 
 pub mod packets;
+pub use self::status_request::*;
 
 #[derive(Debug)]
-pub struct Client {}
+pub struct Client {
+    outgoing: Sender<packets::OutgoingPackets>,
+}
 
 #[derive(Debug)]
 pub struct ServerBuilder {
     bind_addr: Option<SocketAddr>,
     new_player: Option<Sender<Client>>,
     shutdown: Option<AbortRegistration>,
-    stats_request: Option<Sender<StatsRequest>>,
+    stats_request: Option<Sender<StatusRequest>>,
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Stats {
-    pub players_max: usize,
-    pub players_online: usize,
-    pub description: String,
-    pub favicon: Option<String>,
+#[derive(Clone)]
+pub struct ServerState {
+    pub http_client: HttpClient,
+    pub keypair: crypto::Keypair,
+    pub new_client: Sender<Client>,
+    pub stats_request: Sender<StatusRequest>,
 }
 
-#[derive(Debug)]
-pub struct StatsRequest {
-    send_stats: oneshot::Sender<Stats>,
-}
+impl Client {
+    pub fn outgoing(&self) -> &Sender<packets::OutgoingPackets> {
+        &self.outgoing
+    }
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
-pub enum ConnectionState {
-    Start,
-    Status,
-    Play,
-    Login,
+    pub fn outgoing_mut(&mut self) -> &mut Sender<packets::OutgoingPackets> {
+        &mut self.outgoing
+    }
 }
 
 impl ServerBuilder {
@@ -73,30 +75,32 @@ impl ServerBuilder {
         self
     }
 
-    pub fn stats_request(mut self, on_request: Sender<StatsRequest>) -> Self {
+    pub fn stats_request(mut self, on_request: Sender<StatusRequest>) -> Self {
         self.stats_request = Some(on_request);
         self
     }
 
     pub async fn run(self) -> io::Result<()> {
         let bind_addr = self.bind_addr.expect("missing bind_addr");
-        let new_player = self.new_player.expect("missing channel for new players");
-        let stats_req = self
+        let new_client = self.new_player.expect("missing channel for new players");
+        let stats_request = self
             .stats_request
             .expect("missing channel for status requests");
-        let kp = crypto::Keypair::generate();
+        let keypair = crypto::Keypair::generate();
+
+        let state = ServerState {
+            http_client: HttpClient::new(),
+            keypair,
+            new_client,
+            stats_request,
+        };
 
         let handler_fut =
             TcpListener::bind(&bind_addr)?
                 .incoming()
                 .for_each(|maybe_conn| {
                     match maybe_conn {
-                        Ok(conn) => connection::accept(
-                            conn,
-                            new_player.clone(),
-                            stats_req.clone(),
-                            kp.clone(),
-                        ),
+                        Ok(conn) => connection::accept(conn, state.clone()),
                         Err(e) => {
                             error!("error while accepting TCP connection: {:?}", e)
                         }
@@ -112,21 +116,5 @@ impl ServerBuilder {
         }
 
         Ok(())
-    }
-}
-
-impl StatsRequest {
-    pub async fn send_via(mut chan: Sender<StatsRequest>) -> Option<Stats> {
-        let (tx, rx) = oneshot::channel();
-        let request = StatsRequest { send_stats: tx };
-
-        match chan.send(request).await.ok() {
-            Some(_) => rx.map(|res| res.ok()).await,
-            None => None,
-        }
-    }
-
-    pub fn respond(self, stats: Stats) {
-        let _ = self.send_stats.send(stats);
     }
 }
