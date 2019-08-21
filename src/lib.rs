@@ -1,4 +1,3 @@
-#![feature(async_await)]
 #![allow(dead_code)]
 
 use self::{game::GameBuilder, net::ServerBuilder};
