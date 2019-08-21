@@ -3,7 +3,7 @@ use crate::net::{
     crypto::{self, CryptStream},
     packets::*,
     util::Autoflush,
-    ServerState,
+    Client, ServerState,
 };
 use futures::{compat::Future01CompatExt, prelude::*};
 use log::error;
@@ -35,7 +35,7 @@ struct Property {
 
 pub async fn handle(
     mut conn: Framed<TcpStream, Coder>,
-    state: ServerState,
+    mut state: ServerState,
 ) -> io::Result<TcpStream> {
     conn.codec_mut().set_state(ConnectionState::Login);
 
@@ -72,7 +72,7 @@ pub async fn handle(
 
     let login_success = LoginSuccess {
         uuid: validation.id_for_client(),
-        username,
+        username: username.clone(),
     };
 
     let mut encrypted_conn = {
@@ -95,7 +95,14 @@ pub async fn handle(
         .send(OutgoingPackets::LoginSuccess(login_success))
         .await?;
 
-    play::handle(encrypted_conn, state).await
+    let (inc_tx, out_rx, client) = Client::new(username);
+    state
+        .new_client
+        .send(client)
+        .await
+        .map_err(|_| Error::new(ErrorKind::Other, "game disconnected"))?;
+
+    play::handle(encrypted_conn, state, inc_tx, out_rx).await
 }
 
 impl ClientValidation {

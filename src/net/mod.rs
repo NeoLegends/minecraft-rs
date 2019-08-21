@@ -1,5 +1,5 @@
 use futures::{
-    channel::mpsc::Sender,
+    channel::mpsc::{self, Receiver, Sender},
     future::{self, AbortRegistration, Abortable},
     prelude::*,
 };
@@ -21,7 +21,9 @@ pub use self::status_request::*;
 
 #[derive(Debug)]
 pub struct Client {
+    incoming: Receiver<packets::IncomingPackets>,
     outgoing: Sender<packets::OutgoingPackets>,
+    username: String,
 }
 
 #[derive(Debug)]
@@ -41,12 +43,37 @@ pub struct ServerState {
 }
 
 impl Client {
-    pub fn outgoing(&self) -> &Sender<packets::OutgoingPackets> {
-        &self.outgoing
+    pub fn new(
+        username: String,
+    ) -> (
+        Sender<packets::IncomingPackets>,
+        Receiver<packets::OutgoingPackets>,
+        Client,
+    ) {
+        let (inc_tx, inc_rx) = mpsc::channel(0);
+        let (out_tx, out_rx) = mpsc::channel(0);
+
+        (
+            inc_tx,
+            out_rx,
+            Client {
+                incoming: inc_rx,
+                outgoing: out_tx,
+                username,
+            },
+        )
     }
 
-    pub fn outgoing_mut(&mut self) -> &mut Sender<packets::OutgoingPackets> {
+    pub fn incoming(&mut self) -> &mut Receiver<packets::IncomingPackets> {
+        &mut self.incoming
+    }
+
+    pub fn outgoing(&mut self) -> &mut Sender<packets::OutgoingPackets> {
         &mut self.outgoing
+    }
+
+    pub fn username(&self) -> &str {
+        &self.username
     }
 }
 
