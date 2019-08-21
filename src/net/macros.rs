@@ -49,10 +49,10 @@ macro_rules! expect_packet {
     ($conn:expr, $packet:ident) => {
         match $conn.next().await {
             Some(Ok(IncomingPackets::$packet(packet))) => {
-                packet
-                    .validate_self()
-                    .map_err(|e| ::std::io::Error::new(::std::io::ErrorKind::InvalidData, e))?
-            },
+                packet.validate_self().map_err(|e| {
+                    ::std::io::Error::new(::std::io::ErrorKind::InvalidData, e)
+                })?
+            }
             Some(Ok(_)) => {
                 log::error!("received unexpected packet");
                 return Ok($conn.into_inner());
@@ -60,11 +60,11 @@ macro_rules! expect_packet {
             Some(Err(e)) => {
                 log::error!("{:?}", e);
                 return Ok($conn.into_inner());
-            },
+            }
             None => {
                 log::error!("reached stream eof.");
                 return Ok($conn.into_inner());
-            },
+            }
         }
     };
 }
