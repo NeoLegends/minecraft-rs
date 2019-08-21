@@ -22,6 +22,7 @@ pub enum IncomingPackets {
 pub enum OutgoingPackets {
     EncryptionRequest(EncryptionRequest),
     Disconnect(Disconnect),
+    LoginSuccess(LoginSuccess),
     Ping(Ping),
     StatusResponse(StatusResponse),
 }

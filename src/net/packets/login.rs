@@ -3,6 +3,10 @@ use super::{
     Incoming, Outgoing,
 };
 use bytes::{BufMut, Bytes, BytesMut};
+use openssl::{
+    error::ErrorStack,
+    rsa::{Padding, Rsa},
+};
 use std::{
     convert::TryFrom,
     io::{self, Cursor, Seek, SeekFrom},
@@ -27,7 +31,19 @@ pub struct EncryptionResponse {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct DecryptedEncryptionResponse {
+    pub shared_secret: Vec<u8>,
+    pub verify_token: Vec<u8>,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LoginStart {
+    pub username: String,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct LoginSuccess {
+    pub uuid: String,
     pub username: String,
 }
 
@@ -65,6 +81,36 @@ impl Outgoing for EncryptionRequest {
     }
 }
 
+impl EncryptionResponse {
+    pub fn decrypt_parts(
+        &self,
+        private_key: &[u8],
+    ) -> Result<DecryptedEncryptionResponse, ErrorStack> {
+        let rsa = Rsa::private_key_from_der(private_key)?;
+
+        let mut shared_secret_buf =
+            vec![0; (rsa.size() as usize).max(self.shared_secret.len())];
+        let mut verify_token_buf =
+            vec![0; (rsa.size() as usize).max(self.verify_token.len())];
+
+        rsa.private_decrypt(
+            &self.shared_secret,
+            &mut shared_secret_buf,
+            Padding::PKCS1,
+        )?;
+        rsa.private_decrypt(
+            &self.verify_token,
+            &mut verify_token_buf,
+            Padding::PKCS1,
+        )?;
+
+        Ok(DecryptedEncryptionResponse {
+            shared_secret: shared_secret_buf,
+            verify_token: verify_token_buf,
+        })
+    }
+}
+
 impl TryFrom<Bytes> for EncryptionResponse {
     type Error = io::Error;
 
@@ -87,7 +133,21 @@ impl TryFrom<Bytes> for EncryptionResponse {
     }
 }
 
-impl Incoming for EncryptionResponse {}
+impl Incoming for EncryptionResponse {
+    fn validate(&self) -> Result<(), String> {
+        if self.shared_secret.is_empty() {
+            return Err("empty shared secret".to_owned());
+        } else if self.shared_secret.len() != 128 {
+            return Err("shared secret len invalid".to_owned());
+        } else if self.verify_token.is_empty() {
+            return Err("empty verify token".to_owned());
+        } else if self.verify_token.len() != 128 {
+            return Err("verify token len invalid".to_owned());
+        }
+
+        Ok(())
+    }
+}
 
 impl TryFrom<Bytes> for LoginStart {
     type Error = io::Error;
@@ -106,5 +166,19 @@ impl Incoming for LoginStart {
             0 => Err("empty username".to_owned()),
             _ => Ok(()),
         }
+    }
+}
+
+impl Outgoing for LoginSuccess {
+    fn written_len(&self) -> usize {
+        var_usize_length(self.username.len())
+            + var_usize_length(self.uuid.len())
+            + self.username.len()
+            + self.uuid.len()
+    }
+
+    fn write_to(&self, dst: &mut BytesMut) -> Result<(), io::Error> {
+        dst.write_str(&self.uuid)?;
+        dst.write_str(&self.username)
     }
 }

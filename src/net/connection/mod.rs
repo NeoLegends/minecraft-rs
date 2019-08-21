@@ -5,6 +5,7 @@ use std::io::{self, Error, ErrorKind};
 use tokio::{codec::Framed, io::AsyncWriteExt, net::TcpStream};
 
 mod login;
+mod play;
 mod status;
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
