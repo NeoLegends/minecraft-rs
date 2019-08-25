@@ -1,7 +1,7 @@
 use super::{packets::*, ServerState};
 use futures::prelude::*;
 use log::{error, info};
-use std::io::{self, Error, ErrorKind};
+use std::io;
 use tokio::{codec::Framed, io::AsyncWriteExt, net::TcpStream};
 
 mod login;
@@ -32,17 +32,7 @@ async fn handle_connection(conn: TcpStream, state: ServerState) -> io::Result<()
 
     let mut framed = Framed::new(conn, Coder::new(ConnectionState::Start));
 
-    let handshake =
-        if let Some(Ok(IncomingPackets::Handshake(hs))) = framed.next().await {
-            hs.validate_self()
-                .map_err(|e| Error::new(ErrorKind::InvalidData, e))?
-        } else {
-            error!("invalid handshake from {}", remote_addr);
-
-            let mut transport = framed.into_inner();
-            let _ = AsyncWriteExt::shutdown(&mut transport).await;
-            return Err(Error::new(ErrorKind::InvalidData, "invalid handshake"));
-        };
+    let handshake = expect_packet!(framed, Handshake);
     let mut transport = match handshake.next_state {
         NextState::Login => login::handle(framed, state).await?,
         NextState::Status => status::handle(framed, state).await?,

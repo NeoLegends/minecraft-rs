@@ -54,16 +54,17 @@ macro_rules! expect_packet {
                 })?
             }
             Some(Ok(_)) => {
-                log::error!("received unexpected packet");
-                return Ok($conn.into_inner());
+                return Err(::std::io::Error::new(
+                    ::std::io::ErrorKind::InvalidData,
+                    "received unexpected packet",
+                ))
             }
-            Some(Err(e)) => {
-                log::error!("{:?}", e);
-                return Ok($conn.into_inner());
-            }
+            Some(Err(e)) => return Err(e),
             None => {
-                log::error!("reached stream eof.");
-                return Ok($conn.into_inner());
+                return Err(::std::io::Error::new(
+                    ::std::io::ErrorKind::UnexpectedEof,
+                    "reached end of stream",
+                ))
             }
         }
     };
