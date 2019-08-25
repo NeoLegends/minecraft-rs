@@ -4,8 +4,10 @@
 //! Enums with data (this includes `Option<T>` and `Result<T, E>`) are _not_
 //! supported, because the network format does not model that.
 //!
-//! Ensure your struct members are listed in the right order (as in the network
-//! format specification), because the library depends on that.
+//! Minecraft's network format is not self-describing. Therefore, when using
+//! serde's derive feature, ensure your struct members are listed in the same
+//! order as specified in the format specification. Otherwise the library
+//! will yield garbage values.
 
 use bytes::{Buf, BufMut, BytesMut};
 use serde::{de::Deserialize, ser::Serialize};
