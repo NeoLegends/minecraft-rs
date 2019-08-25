@@ -5,7 +5,7 @@ mod status;
 
 pub use self::{codec::Coder, handshake::*, login::*, status::*};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, enum_as_inner::EnumAsInner)]
 pub enum IncomingPackets {
     EncryptionResponse(EncryptionResponse),
     Handshake(Handshake),
@@ -14,7 +14,7 @@ pub enum IncomingPackets {
     StatusHandshake(StatusHandshake),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, enum_as_inner::EnumAsInner)]
 pub enum OutgoingPackets {
     EncryptionRequest(EncryptionRequest),
     Disconnect(Disconnect),
@@ -37,28 +37,4 @@ pub trait Incoming {
             Err(e) => Err(e),
         }
     }
-}
-
-macro_rules! into_getter {
-    ($($name:ident -> $variant:ident),+) => {
-        $(
-            pub fn $name(self) -> Result<$variant, Self> {
-                match self {
-                    Self::$variant(x) => Ok(x),
-                    _ => Err(self)
-                }
-            }
-        )*
-    };
-}
-
-// TODO: Generate this using a proc macro
-impl IncomingPackets {
-    into_getter!(
-        into_encryption_response -> EncryptionResponse,
-        into_handshake -> Handshake,
-        into_login_start -> LoginStart,
-        into_ping -> Ping,
-        into_status_handshake -> StatusHandshake
-    );
 }
