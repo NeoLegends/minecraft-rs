@@ -1,3 +1,14 @@
+//! Serialize fixed-size arrays to a minecraft-compatible format.
+//!
+//! Serde, by default, serializes arrays with a fixed size (e. g. `[u8; 16]`) as
+//! tuples. This library, however, serializes tuples without a size specification
+//! on the wire to allow for things like `struct Vec3(f32, f32, f32);` to work.
+//!
+//! As such, when using fixed-size arrays to store minecraft-network-format arrays,
+//! the format specification is violated. This module fixes that.
+//!
+//! Use this module via `#[serde(with = "serde_minecraft::array")]`.
+
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::iter::FromIterator;
 
