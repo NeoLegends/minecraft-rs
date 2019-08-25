@@ -20,7 +20,7 @@ fn to_minecraft_digest(mut hash: [u8; 20]) -> String {
     }
 
     let digest = hash
-        .into_iter()
+        .iter()
         .map(|v| format!("{:02x}", *v))
         .collect::<String>()
         .trim_start_matches('0')
@@ -36,10 +36,10 @@ fn to_minecraft_digest(mut hash: [u8; 20]) -> String {
 fn two_complement(bytes: &mut [u8]) {
     let mut carry = true;
     for i in (0..bytes.len()).rev() {
-        bytes[i] = !bytes[i] & 0xff;
+        bytes[i] = !bytes[i];
         if carry {
             carry = bytes[i] == 0xff;
-            bytes[i] = bytes[i] + 1;
+            bytes[i] += 1;
         }
     }
 }
