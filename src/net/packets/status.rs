@@ -1,20 +1,16 @@
-use super::{
-    bufext::{var_i64_length, var_usize_length, VarReadExt, VarWriteExt},
-    Incoming, Outgoing,
-};
-use bytes::{Bytes, BytesMut, IntoBuf};
+use super::Incoming;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::{convert::TryFrom, io};
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct Ping {
     pub value: i64,
 }
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, PartialEq)]
 pub struct StatusHandshake(());
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct StatusResponse {
     pub version: String,
     pub protocol_version: u32,
@@ -24,34 +20,7 @@ pub struct StatusResponse {
     pub favicon: Option<String>,
 }
 
-impl TryFrom<Bytes> for Ping {
-    type Error = io::Error;
-
-    fn try_from(data: Bytes) -> io::Result<Self> {
-        let value = data.into_buf().read_var_i64()?;
-        Ok(Ping { value })
-    }
-}
-
 impl Incoming for Ping {}
-
-impl Outgoing for Ping {
-    fn written_len(&self) -> usize {
-        var_i64_length(self.value)
-    }
-
-    fn write_to(&self, dst: &mut BytesMut) -> io::Result<()> {
-        dst.write_var_i64(self.value)
-    }
-}
-
-impl TryFrom<Bytes> for StatusHandshake {
-    type Error = io::Error;
-
-    fn try_from(_: Bytes) -> io::Result<Self> {
-        Ok(StatusHandshake(()))
-    }
-}
 
 impl Incoming for StatusHandshake {}
 
@@ -99,18 +68,5 @@ impl From<crate::net::Status> for StatusResponse {
             description: stats.description,
             favicon: stats.favicon,
         }
-    }
-}
-
-impl Outgoing for StatusResponse {
-    fn written_len(&self) -> usize {
-        let stringified = self.build_json();
-
-        var_usize_length(stringified.len()) + stringified.len()
-    }
-
-    fn write_to(&self, dst: &mut BytesMut) -> io::Result<()> {
-        let stringified = self.build_json();
-        dst.write_str(&stringified)
     }
 }

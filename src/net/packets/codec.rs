@@ -1,6 +1,7 @@
-use super::{bufext::VarReadExt, IncomingPackets, OutgoingPackets};
+use super::*;
 use crate::net::connection::ConnectionState;
 use bytes::{BufMut, Bytes, BytesMut};
+use minecraft_varint::VarReadExt;
 use std::io::{Cursor, Error, ErrorKind};
 use tokio::codec::{Decoder, Encoder};
 
@@ -39,7 +40,9 @@ macro_rules! parse_table {
     ($packetid:expr, $contents:expr, $($pid:expr => $type:ident),*) => {
         match $packetid {
             $($pid => {
-                let packet = ::std::convert::TryInto::try_into($contents)?;
+                use bytes::IntoBuf;
+
+                let packet = serde_minecraft::read_from(&mut $contents.into_buf())?;
                 $crate::net::packets::IncomingPackets::$type(packet)
             },)*
             _ => return Err(
@@ -117,19 +120,17 @@ macro_rules! serialize_table {
     ($item:expr, $dst:expr, $($packet:ident => $packet_id:expr),+) => {
         match $item {
             $(OutgoingPackets::$packet(p) => {
-                use $crate::net::packets::{
-                    Outgoing,
-                    bufext::VarWriteExt,
-                };
+                use minecraft_varint::VarWriteExt;
+                use serde_minecraft;
 
-                let packet_id_len = $crate::net::packets::bufext::var_i32_length($packet_id);
-                let total_len = p.written_len() + packet_id_len;
+                let packet_id_len = minecraft_varint::var_i32_length($packet_id);
+                let total_len = serde_minecraft::serialized_size(&p)? + packet_id_len;
 
                 $dst.reserve(total_len);
 
                 $dst.write_var_len(total_len)?;
                 $dst.write_var_i32($packet_id)?;
-                p.write_to($dst)?;
+                serde_minecraft::write_to_no_resize(&p, $dst)?;
             })*,
             _ => return Err(::std::io::Error::new(
                 ::std::io::ErrorKind::Other,

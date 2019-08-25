@@ -1,0 +1,10 @@
+[package]
+name = "minecraft-varint"
+description = "Encoding support for minecraft varints"
+version = "0.1.0"
+authors = ["Moritz Gunz <moritz.gunz@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+bytes = "0.4.12"
+mc-varint = "0.1.1"

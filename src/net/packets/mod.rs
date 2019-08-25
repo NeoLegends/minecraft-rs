@@ -1,13 +1,9 @@
-use bytes::{Bytes, BytesMut};
-use std::{convert::TryFrom, io};
-
-mod bufext;
 mod codec;
 mod handshake;
 mod login;
 mod status;
 
-pub use self::{bufext::*, codec::Coder, handshake::*, login::*, status::*};
+pub use self::{codec::Coder, handshake::*, login::*, status::*};
 
 #[derive(Clone, Debug)]
 pub enum IncomingPackets {
@@ -27,23 +23,20 @@ pub enum OutgoingPackets {
     StatusResponse(StatusResponse),
 }
 
-pub trait Incoming: TryFrom<Bytes, Error = io::Error> {
+pub trait Incoming {
     fn validate(&self) -> Result<(), String> {
         Ok(())
     }
 
-    fn validate_self(self) -> Result<Self, String> {
+    fn validate_self(self) -> Result<Self, String>
+    where
+        Self: Sized,
+    {
         match self.validate() {
             Ok(_) => Ok(self),
             Err(e) => Err(e),
         }
     }
-}
-
-pub trait Outgoing {
-    fn written_len(&self) -> usize;
-
-    fn write_to(&self, dst: &mut BytesMut) -> Result<(), io::Error>;
 }
 
 macro_rules! into_getter {

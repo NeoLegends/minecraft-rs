@@ -13,8 +13,14 @@ path = "src/lib.rs"
 name = "minecraft"
 path = "src/main.rs"
 
+[workspace]
+members = [
+    "minecraft-varint",
+    "serde-minecraft",
+]
+
 [dependencies]
-bytes = "0.4.12"
+bytes = { version = "0.4.12", features = ["serde"] }
 clap = "2.33.0"
 enum_dispatch = "0.1.3"
 env_logger = "0.6.2"
@@ -22,9 +28,11 @@ futures-preview = { version = "0.3.0-alpha.17", features = ["async-await", "comp
 hematite-nbt = "0.4.0"
 log = "0.4.8"
 mc-varint = "0.1.1"
+minecraft-varint = { path = "./minecraft-varint" }
 openssl = "0.10.24"
 rand = "0.7.0"
 reqwest = "0.9.19"
 serde = { version = "1.0.99", features = ["derive"] }
 serde_json = "1.0.40"
+serde_minecraft = { path = "./serde-minecraft" }
 tokio = "0.2.0-alpha.1"

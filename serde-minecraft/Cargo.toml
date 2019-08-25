@@ -1,0 +1,11 @@
+[package]
+name = "serde_minecraft"
+description = "Serde serialization for minecraft's network packet format."
+version = "0.1.0"
+authors = ["Moritz Gunz <moritz.gunz@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+bytes = "0.4.12"
+minecraft-varint = { path = "../minecraft-varint" }
+serde = "1.0.99"
