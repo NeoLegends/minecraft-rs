@@ -174,8 +174,7 @@ impl<'ser, 'a, B: BufMut> ser::Serializer for &'ser mut Serializer<'a, B> {
         variant_index: u32,
         _: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
-        // MC likes 1-based indices for enums
-        (variant_index as i32 + 1).serialize(self)
+        (variant_index as i32).serialize(self)
     }
 
     fn serialize_newtype_struct<T: ?Sized>(

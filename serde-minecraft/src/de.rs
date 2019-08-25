@@ -357,7 +357,15 @@ impl<'a, 'de, B: Buf> EnumAccess<'de> for &'a mut Deserializer<'de, B> {
     where
         V: serde::de::DeserializeSeed<'de>,
     {
-        let variant = i32::deserialize(&mut *self)? - 1;
+        let variant = i32::deserialize(&mut *self)?;
+
+        if variant < 0 {
+            return Err(de::Error::invalid_value(
+                Unexpected::Signed(variant as i64),
+                &"value >= 0",
+            ));
+        }
+
         let val = seed.deserialize((variant as u32).into_deserializer())?;
         Ok((val, self))
     }

@@ -1,10 +1,12 @@
 use super::Incoming;
 use serde::Deserialize;
+use serde_repr::Deserialize_repr;
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize_repr)]
+#[repr(u8)]
 pub enum NextState {
-    Status,
-    Login,
+    Status = 1,
+    Login = 2,
 }
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
