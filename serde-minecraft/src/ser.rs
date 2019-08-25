@@ -4,7 +4,7 @@ use minecraft_varint::{
     var_i32_length, var_i64_length, var_usize_length, VarWriteExt,
 };
 use serde::ser::{self, *};
-use std::io::ErrorKind;
+use std::{i32, io::ErrorKind};
 
 #[derive(Debug)]
 pub struct Serializer<'a, B>(&'a mut B);
@@ -192,11 +192,18 @@ impl<'ser, 'a, B: BufMut> ser::Serializer for &'ser mut Serializer<'a, B> {
         self,
         len: Option<usize>,
     ) -> Result<Self::SerializeSeq, Self::Error> {
-        match len {
-            Some(l) => self.serialize_i32(l as i32)?,
+        let len = match len {
+            Some(l) => l,
             None => return Err(Error::LengthRequired),
+        };
+
+        if len > (i32::MAX as usize) {
+            let msg =
+                "list too long, max contain at max i32::MAX elements".to_owned();
+            return Err(Error::Custom(msg));
         }
 
+        self.serialize_i32(len as i32)?;
         Ok(self)
     }
 
