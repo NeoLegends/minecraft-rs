@@ -1,5 +1,5 @@
 use super::Incoming;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use serde_json::{json, Value};
 
 #[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -10,7 +10,7 @@ pub struct Ping {
 #[derive(Copy, Clone, Debug, Deserialize, Eq, Hash, PartialEq)]
 pub struct StatusHandshake(());
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatusResponse {
     pub version: String,
     pub protocol_version: u32,
@@ -68,5 +68,15 @@ impl From<crate::net::Status> for StatusResponse {
             description: stats.description,
             favicon: stats.favicon,
         }
+    }
+}
+
+impl Serialize for StatusResponse {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let string = self.build_json();
+        serializer.serialize_str(&string)
     }
 }
