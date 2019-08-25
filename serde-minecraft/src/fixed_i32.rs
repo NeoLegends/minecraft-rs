@@ -14,9 +14,9 @@ where
     Ok(unsigned as i32)
 }
 
-pub fn serialize<S>(val: i32, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(val: &i32, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    serializer.serialize_u32(val as u32)
+    serializer.serialize_u32(*val as u32)
 }

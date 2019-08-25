@@ -14,9 +14,9 @@ where
     Ok(unsigned as i64)
 }
 
-pub fn serialize<S>(val: i64, serializer: S) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(val: &i64, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    serializer.serialize_u64(val as u64)
+    serializer.serialize_u64(*val as u64)
 }
