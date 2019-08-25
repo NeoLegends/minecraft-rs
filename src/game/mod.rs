@@ -2,7 +2,7 @@ use crate::net::{Client, StatusRequest};
 use futures::channel::mpsc::Receiver;
 use std::{io, path::Path};
 
-mod world;
+pub mod world;
 
 #[derive(Debug)]
 pub struct GameBuilder<'a> {
