@@ -6,6 +6,6 @@ authors = ["Moritz Gunz <moritz.gunz@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-bytes = "0.4.12"
+bytes = { version = "0.4.12", features = ["i128"] }
 minecraft-varint = { path = "../minecraft-varint" }
 serde = "1.0.99"

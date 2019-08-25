@@ -122,6 +122,14 @@ impl<'a, 'de, B: Buf> de::Deserializer<'de> for &'a mut Deserializer<'de, B> {
         visitor.visit_i64(val)
     }
 
+    fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        self.require_length(16)?;
+        visitor.visit_i128(self.0.get_i128_be())
+    }
+
     fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
@@ -152,6 +160,14 @@ impl<'a, 'de, B: Buf> de::Deserializer<'de> for &'a mut Deserializer<'de, B> {
     {
         self.require_length(8)?;
         visitor.visit_u64(self.0.get_u64_be())
+    }
+
+    fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        self.require_length(16)?;
+        visitor.visit_u128(self.0.get_u128_be())
     }
 
     fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>

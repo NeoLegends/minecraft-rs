@@ -73,6 +73,13 @@ impl<'ser, 'a, B: BufMut> ser::Serializer for &'ser mut Serializer<'a, B> {
         })
     }
 
+    fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
+        self.require_capacity(16)?;
+
+        self.0.put_i128_be(v);
+        Ok(())
+    }
+
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
         self.require_capacity(1)?;
 
@@ -98,6 +105,13 @@ impl<'ser, 'a, B: BufMut> ser::Serializer for &'ser mut Serializer<'a, B> {
         self.require_capacity(8)?;
 
         self.0.put_u64_be(v);
+        Ok(())
+    }
+
+    fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
+        self.require_capacity(16)?;
+
+        self.0.put_u128_be(v);
         Ok(())
     }
 
